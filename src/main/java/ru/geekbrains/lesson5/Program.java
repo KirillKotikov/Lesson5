@@ -8,22 +8,23 @@ import java.util.Scanner;
 public class Program {
 
     static Scanner scanner = new Scanner(System.in);
+
     /**
      * Необходимо разделить на горизонтальные уровни "Редактор 3D графики".
      * Один пользователь. Программа работает на одном компьютере без выхода в сеть.
-     *
+     * <p>
      * Что видит пользователь, как взаимодействует? (Панель загрузки, блок редактирования, блок просмотра).
      * Какие задачи можно делать – функции системы? (Загрузить 3D модель, рассмотреть 3D модель, создать новую,
      * редактировать вершины, текстуры, сделать рендер, сохранить рендер).
      * Какие и где хранятся данные? (файлы 3D моделей, рендеры, анимация .., в файловой системе компьютера).
-     *
+     * <p>
      * Предложить варианты связывания всех уровней – сценарии использования. 3-4 сценария.
      * Сквозная функция – создать новую 3D модель, сделать рендер для печати на принтере…
      */
     public static void main(String[] args) {
         Editor3D editor3D = new Editor3D();
         boolean f = true;
-        while (f){
+        while (f) {
             System.out.println("*** МОЙ 3D РЕДАКТОР ***");
             System.out.println("=======================");
             System.out.println("1. Открыть проект");
@@ -33,9 +34,10 @@ public class Program {
             System.out.println("5. Отобразить все текстуры проекта");
             System.out.println("6. Выполнить рендер всех моделей");
             System.out.println("7. Выполнить рендер модели");
+            System.out.println("8. Удалить модель");
             System.out.println("0. ЗАВЕРШЕНИЕ РАБОТЫ ПРИЛОЖЕНИЯ");
             System.out.print("Пожалуйста, выберите пункт меню: ");
-            if (scanner.hasNextInt()){
+            if (scanner.hasNextInt()) {
                 int no = scanner.nextInt();
                 scanner.nextLine();
                 try {
@@ -64,24 +66,31 @@ public class Program {
                             break;
                         case 7:
                             System.out.print("Укажите номер модели: ");
-                            if (scanner.hasNextInt()){
+                            if (scanner.hasNextInt()) {
                                 int modelNo = scanner.nextInt();
                                 scanner.nextLine();
                                 editor3D.renderModel(modelNo);
+                            } else {
+                                System.out.println("Номер модели указан некорректно.");
                             }
-                            else {
+                            break;
+                        case 8:
+                            System.out.print("Укажите номер модели: ");
+                            if (scanner.hasNextInt()) {
+                                int modelNo = scanner.nextInt();
+                                scanner.nextLine();
+                                editor3D.deleteModel(modelNo);
+                            } else {
                                 System.out.println("Номер модели указан некорректно.");
                             }
                             break;
                         default:
                             System.out.println("Укажите корректный пункт меню.");
                     }
-                }
-                catch (Exception e){
+                } catch (Exception e) {
                     System.out.println(e.getMessage());
                 }
-            }
-            else {
+            } else {
                 System.out.println("Укажите корректный пункт меню.");
                 scanner.nextLine();
             }
@@ -92,7 +101,7 @@ public class Program {
 /**
  * UI (User Interface)
  */
-class Editor3D implements UILayer{
+class Editor3D implements UILayer {
 
     private ProjectFile projectFile;
     private BusinessLogicalLayer businessLogicalLayer;
@@ -102,7 +111,7 @@ class Editor3D implements UILayer{
     private Database database;
 
 
-    private void initialize(){
+    private void initialize() {
         database = new EditorDatabase(projectFile);
         databaseAccess = new EditorDatabaseAccess(database);
         businessLogicalLayer = new EditorBusinessLogicalLayer(databaseAccess);
@@ -130,7 +139,7 @@ class Editor3D implements UILayer{
 
     }
 
-    private void checkProjectFile(){
+    private void checkProjectFile() {
         if (projectFile == null)
             throw new RuntimeException("Файл проекта не определен.");
     }
@@ -151,11 +160,11 @@ class Editor3D implements UILayer{
         // Предусловие
         checkProjectFile();
 
-        ArrayList<Model3D> models = (ArrayList<Model3D>)businessLogicalLayer.getAllModels();
-        for (int i = 0; i < models.size(); i++){
+        ArrayList<Model3D> models = (ArrayList<Model3D>) businessLogicalLayer.getAllModels();
+        for (int i = 0; i < models.size(); i++) {
             System.out.printf("===%d===\n", i);
             System.out.println(models.get(i));
-            for (Texture texture: models.get(i).getTextures()) {
+            for (Texture texture : models.get(i).getTextures()) {
                 System.out.printf("\t%s\n", texture);
             }
         }
@@ -168,8 +177,8 @@ class Editor3D implements UILayer{
         // Предусловие
         checkProjectFile();
 
-        ArrayList<Texture> textures = (ArrayList<Texture>)businessLogicalLayer.getAllTextures();
-        for (int i = 0; i < textures.size(); i++){
+        ArrayList<Texture> textures = (ArrayList<Texture>) businessLogicalLayer.getAllTextures();
+        for (int i = 0; i < textures.size(); i++) {
             System.out.printf("===%d===\n", i);
             System.out.println(textures.get(i));
         }
@@ -194,7 +203,7 @@ class Editor3D implements UILayer{
         // Предусловие
         checkProjectFile();
 
-        ArrayList<Model3D> models = (ArrayList<Model3D>)businessLogicalLayer.getAllModels();
+        ArrayList<Model3D> models = (ArrayList<Model3D>) businessLogicalLayer.getAllModels();
         if (i < 0 || i > models.size() - 1)
             throw new RuntimeException("Номер модели указан некорректною.");
         System.out.println("Подождите ...");
@@ -203,27 +212,40 @@ class Editor3D implements UILayer{
         long endTime = (System.currentTimeMillis() - startTime);
         System.out.printf("Операция выполнена за %d мс.\n", endTime);
     }
+
+    @Override
+    public void deleteModel(int modelNo) {
+        businessLogicalLayer.deleteModel(modelNo);
+        System.out.println("Удалена модель с номером " + modelNo);
+    }
 }
 
 /**
  * Интерфейс UI
  */
-interface UILayer{
+interface UILayer {
 
     void openProject(String fileName);
+
     void showProjectSettings();
+
     void saveProject();
+
     void printAllModels();
+
     void printAllTextures();
+
     void renderAll();
+
     void renderModel(int i);
 
+    void deleteModel(int modelNo);
 }
 
 /**
  * Реализация Business Logical Layer
  */
-class EditorBusinessLogicalLayer implements BusinessLogicalLayer{
+class EditorBusinessLogicalLayer implements BusinessLogicalLayer {
 
     private DatabaseAccess databaseAccess;
 
@@ -253,14 +275,17 @@ class EditorBusinessLogicalLayer implements BusinessLogicalLayer{
             processRender(model);
     }
 
+    @Override
+    public void deleteModel(int modelNo) {
+        databaseAccess.deleteModelById(modelNo);
+    }
+
     private Random random = new Random();
 
-    private void processRender(Model3D model){
-        try
-        {
+    private void processRender(Model3D model) {
+        try {
             Thread.sleep(2500 - random.nextInt(2000));
-        }
-        catch (InterruptedException e){
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
@@ -270,7 +295,7 @@ class EditorBusinessLogicalLayer implements BusinessLogicalLayer{
 /**
  * Интерфейс BLL (Business Logical Layer)
  */
-interface BusinessLogicalLayer{
+interface BusinessLogicalLayer {
     Collection<Model3D> getAllModels();
 
     Collection<Texture> getAllTextures();
@@ -278,12 +303,14 @@ interface BusinessLogicalLayer{
     void renderModel(Model3D model);
 
     void renderAllModels();
+
+    void deleteModel(int modelNo);
 }
 
 /**
  * Реализация DAC
  */
-class EditorDatabaseAccess implements DatabaseAccess{
+class EditorDatabaseAccess implements DatabaseAccess {
 
     private final Database editorDatabase;
 
@@ -294,21 +321,25 @@ class EditorDatabaseAccess implements DatabaseAccess{
     @Override
     public Collection<Model3D> getAllModels() {
         Collection<Model3D> models = new ArrayList<>();
-        for (Entity entity: editorDatabase.getAll()) {
-            if (entity instanceof Model3D)
-            {
-                models.add((Model3D)entity);
+        for (Entity entity : editorDatabase.getAll()) {
+            if (entity instanceof Model3D) {
+                models.add((Model3D) entity);
             }
         }
         return models;
     }
+
+    @Override
+    public void deleteModelById(int modelId) {
+        editorDatabase.deleteModelById(modelId);
+    }
+
     @Override
     public Collection<Texture> getAllTextures() {
         Collection<Texture> models = new ArrayList<>();
-        for (Entity entity: editorDatabase.getAll()) {
-            if (entity instanceof Texture)
-            {
-                models.add((Texture)entity);
+        for (Entity entity : editorDatabase.getAll()) {
+            if (entity instanceof Texture) {
+                models.add((Texture) entity);
             }
         }
         return models;
@@ -325,27 +356,30 @@ class EditorDatabaseAccess implements DatabaseAccess{
     }
 
 
-
-
 }
 
 /**
  * Интерфейс DAC
  */
-interface DatabaseAccess{
+interface DatabaseAccess {
     void addEntity(Entity entity);
+
     void removeEntity(Entity entity);
+
     Collection<Texture> getAllTextures();
+
     Collection<Model3D> getAllModels();
+
+    void deleteModelById(int modelId);
 }
 
 /**
  * Database
  */
-class EditorDatabase implements Database{
+class EditorDatabase implements Database {
 
     private Random random = new Random();
-    private final  ProjectFile projectFile;
+    private final ProjectFile projectFile;
     private Collection<Entity> entities;
 
     public EditorDatabase(ProjectFile projectFile) {
@@ -363,8 +397,8 @@ class EditorDatabase implements Database{
         //TODO: Сохранение текущего состояния всех сущностей проекта
     }
 
-    public Collection<Entity> getAll(){
-        if (entities == null){
+    public Collection<Entity> getAll() {
+        if (entities == null) {
             entities = new ArrayList<>();
             int entCount = random.nextInt(5, 11);
             for (int i = 0; i < entCount; i++) {
@@ -374,10 +408,24 @@ class EditorDatabase implements Database{
         return entities;
     }
 
-    private void generateModelAndTextures(){
+    @Override
+    public void deleteModelById(int modelId) {
+        if (entities == null) {
+            throw new RuntimeException("Список моделей пуст!");
+        }
+        entities.stream()
+                .filter(x -> x.getId() == modelId)
+                .findFirst()
+                .ifPresentOrElse(x -> entities.remove(x),
+                        () -> {
+                            throw new RuntimeException("Модель с номером " + modelId + " в базе данных не найдена!");
+                        });
+    }
+
+    private void generateModelAndTextures() {
         Model3D model3D = new Model3D();
         int txCount = random.nextInt(3);
-        for (int i = 0; i < txCount; i++){
+        for (int i = 0; i < txCount; i++) {
             Texture texture = new Texture();
             model3D.getTextures().add(texture);
             entities.add(texture);
@@ -390,18 +438,20 @@ class EditorDatabase implements Database{
 /**
  * Интерфейс БД
  */
-interface Database{
+interface Database {
     void load();
 
     void save();
 
     Collection<Entity> getAll();
+
+    void deleteModelById(int modelId);
 }
 
 /**
  * 3D модель
  */
-class Model3D implements Entity{
+class Model3D implements Entity {
 
     private static int counter = 10000;
     private int id;
@@ -417,7 +467,7 @@ class Model3D implements Entity{
         id = ++counter;
     }
 
-    public Model3D(){
+    public Model3D() {
 
     }
 
@@ -439,7 +489,7 @@ class Model3D implements Entity{
 /**
  * Текстура
  */
-class Texture implements Entity{
+class Texture implements Entity {
 
     private static int counter = 50000;
 
@@ -463,7 +513,7 @@ class Texture implements Entity{
 /**
  * Сущность
  */
-interface Entity{
+interface Entity {
 
     int getId();
 }
@@ -471,7 +521,7 @@ interface Entity{
 /**
  * Файл проекта
  */
-class ProjectFile{
+class ProjectFile {
 
     private String fileName;
     private int setting1;
